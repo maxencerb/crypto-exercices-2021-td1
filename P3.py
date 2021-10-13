@@ -1,7 +1,12 @@
 import binascii
 from typing import List
 
-c = [
+alphabet = 'abcdefhijklmnopqrstuvwxyzABSDEFHIJKLMNOPQRSTUVWXYZ'
+alphabet_ascii_num = [ord(c) for c in alphabet]
+to_remove = '#$%&*+/<=>@[\]^_`{|}~'
+
+
+ciphertexts = [
     "44dcf620955a4d1dd497d4725e07588aef87cd44c9674f4ea5bc1bb35b25646c6f73f8f8c28780c47bec0c42b596b6c3659ab15841e43985b4c3441d2c30e7014ef1a367296f7b956f976b16f36919fecd7daa37bacd6d682bead9de1ccead97e98d1bce0df9b95a56a77bc6cb42caa6a5cbab1ea74e9475709ecd9e9b030d3f9c5b591f0302ebeea56c7c",
     "56ccba2686141a14c098c43d5c554380ebc5cf4884604456eaf40ee7442d6424216dfab9c49a86892fe70640b786af86758cfc177be46ac6b48d0713322ded5308e3b47c28787b8e61d2280aff740ff49f70bb43f4d46b723aa7d78b0b81a5d9bdba0fcb06eefa0902bc33c1c542c4eb",
     "47d1b3639a5d0e1e9580c87442400c83e8c8d645844e4f59fce141e20c256324216dfab9db96d5ca29f6135baa84b0c76781fa0a65a17a87bb8d000e2935ed0149b0ac7c323d348727942a16e57d5bf8de2fe822b79a407d2deafa9116c4a2",
@@ -14,74 +19,71 @@ c = [
     "47d1b36387510e09d080807049545f83edc28358d73f0a6bede840b3593f796a2822e2f7c9de81c036ea435fa487ee86798ce91d64a16c95b08d10142563e34451b0ad7c34787b956f932558e96a18fe91",
 ]
 
-def xor_two_hex(a, b):
-    byte_a = binascii.unhexlify(a)
-    byte_b = binascii.unhexlify(b)
-    result = ""
-    for i in range(min(len(byte_a), len(byte_b))):
-        result += hex(byte_a[i] ^ byte_b[i])[2:]
-    return result
+# xoring char with space gives that char lowercase if it is uppercase and vice versa
 
-SPACE = ord(' ')
+max_length = max(list(map(lambda x: len(x), ciphertexts)))
+key = [[] for _ in range(int(max_length/2))]
 
-def is_space(rows: List[bytes], current: int, column: int) -> bool:
-	"""
-	Return whether the current byte is encrypted space
-	If the current byte is space, XORing with other bytes should return alpha char or zero (when space)
-	"""
-	for row in rows:
-		result = row[column] ^ current
-		if not (chr(result).isalpha() or result == 0):
-			return False
-	return True
+def hasSpace(num):
+	return num in alphabet_ascii_num
 
-def crack(ciphertexts: List[bytes], cleartexts: List[bytearray]) -> None:
-	""" Try to decrypt ciphertexts and print cleartexts or key """
-	max_length = max(len(line) for line in ciphertexts)
-	key = bytearray(max_length)
-	key_mask = [False] * max_length
-	for column in range(max_length):  # go over characters from the beginning of lines
-		pending_ciphers = [line for line in ciphertexts if len(line) > column]
-		for cipher in pending_ciphers:
-			if is_space(pending_ciphers, cipher[column], column):
-				key[column] = cipher[column] ^ SPACE
-				key_mask[column] = True
-				i = 0
-				for clear_row in range(len(cleartexts)):
-					if len(cleartexts[clear_row]) != 0 and column < len(cleartexts[clear_row]):
-						result = cipher[column] ^ pending_ciphers[i][column]
-						if result == 0:
-							cleartexts[clear_row][column] = SPACE
-						elif chr(result).isupper():  # XOR with space return letter with swapped case
-							cleartexts[clear_row][column] = ord(chr(result).lower())
-						elif chr(result).islower():  # XOR with space return letter with swapped case
-							cleartexts[clear_row][column] = ord(chr(result).upper())
-						i += 1
-				break
+def try_get_key():
+	global key
+	global ciphertexts
+	for i in range(0, max_length, 2):
+		current_cipher = [c for c in ciphertexts if len(c) > i]
+		for cipher1index in range(len(current_cipher) - 1):
+			for cipher2index in range(cipher1index + 1, len(current_cipher)):
+				hex1 = current_cipher[cipher1index][i: i + 2]
+				hex2 = current_cipher[cipher2index][i: i + 2]
+				if hasSpace(int(hex1, 16) ^ int(hex2, 16)):
+					key[int(i / 2)].append(hex(int(hex1, 16) ^ ord(' '))[2:])
+					key[int(i / 2)].append(hex(int(hex2, 16) ^ ord(' '))[2:])
 
-	for pos in range(max_length):
-		# if key_mask[pos]:
-		# 	print('{0:02x}'.format(key[pos]), end='')
-		# else:
-		# 	print('__', end='')
-		if not key_mask[pos]:
-			key[pos] = 0
-	return key
+def remove_key_not_alpha():
+	global key
+	global ciphertexts
+	for i in range(len(key)):
+		index_cipher = 2 * i
+		current_cipher = [c for c in ciphertexts if len(c) > index_cipher]
+		for cipher in current_cipher:
+			hex1 = cipher[index_cipher : index_cipher + 2]
+			for k in key[i]:
+				if chr(int(k, 16) ^ int(hex1, 16)) in to_remove:
+					key[i].remove(k)
 
-def decrypt(ciphertexts: List[bytes], cleartexts: List[bytearray], input_key: str) -> None:
-	""" Decrypt ciphertexts using provided key and print cleartexts """
-	key = binascii.unhexlify(input_key.rstrip())
-	for row in range(len(ciphertexts)):
-		for column in range(len(ciphertexts[row])):
-			cleartexts[row][column] = ciphertexts[row][column] ^ key[column % len(key)]
-			if (int(cleartexts[row][column]) > 127):
-				cleartexts[row][column] = ord('_')
-		print(cleartexts[row].decode('ascii'))
+def xor_two_messages(m1, m2):
+	# longest messge should be the first one
+	if len(m1) < len(m2):
+		m1, m2 = m2, m1
+	result = ''
+	for i in range(0, len(m2), 2):
+		result += hex(int(m1[i: i + 2], 16) ^ int(m2[i: i + 2], 16))[2:]
+	return result
 
+def decode_message(cipher, key):
+	message = xor_two_messages(key, cipher)
+	message_str = ''
+	for i in range(0, len(message), 2):
+		message_str += chr(int(message[i: i + 2], 16))
+	return message_str
+		
 
 if __name__ == '__main__':
-	ciphertexts = [binascii.unhexlify(line.rstrip()) for line in c]
-	cleartexts = [bytearray(b'?' * len(line)) for line in ciphertexts]
-	key = crack(ciphertexts, cleartexts)
-	print(''.join('{:02x}'.format(x) for x in key))
-	decrypt(ciphertexts, cleartexts, ''.join('{:02x}'.format(x) for x in key))
+	try_get_key()
+	key = [list(set(k)) for k in key]
+	remove_key_not_alpha()
+	possible_key = ''
+	for el in key:
+		if len(el) == 0:
+			possible_key += '00'
+			continue
+		possible_key += el[0]
+	for cipher in ciphertexts:
+		print(decode_message(cipher, possible_key))
+	# num_possible_keys = 1
+	# print(key)
+	# for el in key:
+	# 	if len(el) > 0:
+	# 		num_possible_keys *= len(set(el))
+	# print(num_possible_keys)

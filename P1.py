@@ -1,4 +1,3 @@
-import codecs
 import base64
 
 def hex_to_base64(hex):
