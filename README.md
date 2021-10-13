@@ -54,4 +54,17 @@ In a day there is 86400 seconds so we are solving *t* for :
     <img src="https://render.githubusercontent.com/render/math?math=t = 7 \times 10 ^ 21" />
 </p>
 
-So it would take more time to wait for technology to allow this than computing the key with today's technology (~ 10¹¹ times the age of the universe).
+So it would take more time to wait for technology to allow this than computing the key with today's technology (*~ 7 x 10¹¹* times the age of the universe).
+
+### T6 : Password
+
+1. If the password consist of 8 ASCII characters (7 bits each), then the size of the key space would be <img src="https://render.githubusercontent.com/render/math?math=2^{8 \times 7} = 7.2 \times 10 ^ 16" />.
+
+2. The corresponding key length would be a 56 bits key.
+
+3. With only the 26 lowercase letters, we could encode the alphabet on 5 bits (32 possibilities). Then the corresponding key length would be 40.
+
+4. To have a corresponding key length of 128 bits :
+
+    - with 7 bits ASCII, we would need a password of <img src="https://render.githubusercontent.com/render/math?math=\frac{128}{7} \simeq 19 characters" />.
+    - with 5 bits lowercase alphabet, we would need a password of <img src="https://render.githubusercontent.com/render/math?math=\frac{128}{5} \simeq 26 characters" />.
