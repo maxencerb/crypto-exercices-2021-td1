@@ -54,7 +54,7 @@ In a day there is 86400 seconds so we are solving *t* for :
     <img src="https://render.githubusercontent.com/render/math?math=t = 7 \times 10 ^ 21" />
 </p>
 
-So it would take more time to wait for technology to allow this than computing the key with today's technology (*~ 7 x 10¹¹* times the age of the universe).
+So it would take more time to wait for technology to allow this than computing the key with today's technology (~ 7 x 10¹¹ times the age of the universe).
 
 ### T6 : Password
 
